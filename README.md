@@ -97,7 +97,7 @@ pipeline/
   tune.py                  walk-forward grid search for half-life and ridge
   cache/                   cached CSVs/JSON, plus .fetch-state and fetch-manifest
 .github/workflows/forecast.yml   scheduled refresh (daily ×2, weekly audit)
-requirements.txt           numpy
+pipeline/requirements.txt  numpy
 serve.mjs                  static server with SPA fallback for local preview
 vercel.json                clean URLs, SPA rewrites, cache headers
 .vercelignore              keeps the pipeline out of the deployment
