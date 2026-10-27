@@ -1,0 +1,7 @@
+# Keep line endings identical in the index and the working tree, so the
+# Linux workflow and the Windows working copy see the same bytes.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.woff2 binary

@@ -1,0 +1,9 @@
+﻿# Everything that exists to build or verify the site, rather than to serve it.
+pipeline/
+preview/
+.github/
+_ref/
+serve.mjs
+requirements.txt
+README.md
+vercel.json
