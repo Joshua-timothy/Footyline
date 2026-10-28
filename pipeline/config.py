@@ -31,9 +31,11 @@ LEAGUE_BY_ID = {league["id"]: league for league in LEAGUES}
 #   z = (1 - w) * goals + w * scale * xG
 # chosen by a walk-forward sweep on the live season (see tune_xg.py).
 MODEL = dict(
-    half_life_days=420,      # time-decay half life for historical match weights
+    half_life_days=420,      # long-run component of the decay kernel
     l2=0.05,                 # ridge penalty on attack/defence ratings
     xg_weight=0.40,          # blend of xG into the goal observation (0 = goals only)
+    form_mix=0.50,           # share of weight on the long component (1 = single decay)
+    form_half_life_days=60,  # short component: recent-form emphasis
     iterations=420,
     learning_rate=0.9,
     momentum=0.9,

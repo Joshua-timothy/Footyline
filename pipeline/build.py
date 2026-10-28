@@ -527,6 +527,8 @@ class Builder:
                 "ridge": MODEL["l2"],
                 "xgWeight": MODEL["xg_weight"],
                 "xgMatches": self.xg_matches,
+                "formMix": MODEL["form_mix"],
+                "formHalfLifeDays": MODEL["form_half_life_days"],
                 "scoreRange": 10,
                 "trainedMatches": len(self.matches),
             },

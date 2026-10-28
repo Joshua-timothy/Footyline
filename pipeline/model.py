@@ -409,6 +409,8 @@ def fit_ratings(
     l2: float = MODEL["l2"],
     iterations: int = MODEL["iterations"],
     xg_weight: float = 0.0,
+    form_mix: float = MODEL["form_mix"],
+    form_half_life: float = MODEL["form_half_life_days"],
     promoted_prior: tuple[float, float] = (
         MODEL["promoted_attack_prior"],
         MODEL["promoted_defence_prior"],
@@ -427,7 +429,15 @@ def fit_ratings(
     x = np.array([m.home_goals for m in history], dtype=float)
     y = np.array([m.away_goals for m in history], dtype=float)
     age = np.array([(as_of - m.played_on).days for m in history], dtype=float)
-    weights = np.power(0.5, age / half_life)
+
+    # Two-component decay: long-run strength plus a sharper recent-form term.
+    #   w(age) = a * 0.5^(age / long) + (1 - a) * 0.5^(age / short)
+    # Normalised to mean 1 so the ridge penalty keeps the same scale as before.
+    # a = 1 reproduces the single-half-life model exactly.
+    mix = float(np.clip(form_mix, 0.0, 1.0))
+    weights = mix * np.power(0.5, age / half_life)
+    if mix < 1.0 and form_half_life > 0:
+        weights = weights + (1.0 - mix) * np.power(0.5, age / form_half_life)
     weights /= weights.mean()
 
     # xG-blended observations. Each match contributes exactly one observation,
@@ -759,10 +769,16 @@ def walk_forward(
     end: date,
     refit_days: int = 7,
     xg_weight: float | None = None,
+    overrides: dict | None = None,
 ) -> dict:
-    """Fit on everything before each refit date, predict the following week."""
+    """Fit on everything before each refit date, predict the following week.
+
+    ``overrides`` merges into MODEL for the fits, which is how the tuning
+    scripts sweep decay and ridge settings without touching config.
+    """
     from config import MODEL as CFG
 
+    cfg = {**CFG, **(overrides or {})}
     blend = CFG["xg_weight"] if xg_weight is None else float(xg_weight)
 
     records: list[dict] = []
@@ -779,9 +795,11 @@ def walk_forward(
             ratings_cache[cursor] = fit_ratings(
                 league_matches,
                 cursor,
-                half_life=CFG["half_life_days"],
-                l2=CFG["l2"],
+                half_life=cfg["half_life_days"],
+                l2=cfg["l2"],
                 xg_weight=blend,
+                form_mix=cfg["form_mix"],
+                form_half_life=cfg["form_half_life_days"],
             )
             cursor += timedelta(days=refit_days)
         refit_dates = sorted(ratings_cache)

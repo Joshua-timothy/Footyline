@@ -94,9 +94,12 @@ export default function modelView() {
           <div class="prose">
             <p><strong>1. Results in, ratings out.</strong> Every completed match in eleven leagues feeds a
             Dixon-Coles bivariate Poisson model. Each club gets an attack and a defence rating; the league gets a
-            home advantage and a low-score correlation. Fitting maximises a weighted likelihood, so recent matches
-            count more than old ones — half the weight is gone after about
-            <strong>${state.feed?.model?.halfLifeDays ?? 420} days</strong>.</p>
+            home advantage and a low-score correlation. Fitting maximises a weighted likelihood with a two-part
+            decay: a long-run component (half its weight gone after
+            <strong>${state.feed?.model?.halfLifeDays ?? 420} days</strong>) and a sharper form component
+            (<strong>${state.feed?.model?.formHalfLifeDays ?? 60} days</strong>) carrying
+            ${Math.round((1 - (state.feed?.model?.formMix ?? 0.5)) * 100)}% of the weight. A match from last month
+            counts about 2.6× one from ten months ago, against 1.6× under a single 420-day half-life.</p>
             <p><strong>2. Expected goals damp the scoreline.</strong> Where xG is published, the observed goals are
             blended with it before fitting — <code>z = ${((1 - (state.feed?.model?.xgWeight ?? 0)) * 100).toFixed(0)}%
             goals + ${((state.feed?.model?.xgWeight ?? 0) * 100).toFixed(0)}% xG</code>, rescaled to the goals
@@ -126,7 +129,7 @@ export default function modelView() {
               <dt>β · defence</dt><dd>goals conceded</dd>
               <dt>γ · home advantage</dt><dd>fitted per league</dd>
               <dt>τ · low-score fix</dt><dd>draws &amp; 1-0s</dd>
-              <dt>Half-life</dt><dd>${state.feed?.model?.halfLifeDays ?? 420} days</dd>
+              <dt>Decay</dt><dd>${state.feed?.model?.formMix != null ? `${Math.round(state.feed.model.formMix * 100)}% / ${Math.round((1 - state.feed.model.formMix) * 100)}% · ${state.feed?.model?.halfLifeDays ?? 420}d + ${state.feed?.model?.formHalfLifeDays ?? 60}d` : `${state.feed?.model?.halfLifeDays ?? 420} days`}</dd>
               ${state.feed?.model?.xgWeight ? `<dt>xG blend</dt><dd>${Math.round(state.feed.model.xgWeight * 100)}% · ${(state.feed.model.xgMatches ?? 0).toLocaleString()} matches</dd>` : ""}
               <dt>Ridge penalty</dt><dd>${state.feed?.model?.ridge?.toFixed(3) ?? "0.05"}</dd>
               <dt>Training matches</dt><dd>${(state.feed?.model?.trainedMatches ?? 0).toLocaleString()}</dd>
