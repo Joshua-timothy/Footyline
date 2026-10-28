@@ -47,11 +47,17 @@ export function setRenderCallback(callback) {
 
 function notFound(path) {
   return {
-    html: `<div class="view"><div class="empty" style="margin-top:40px">
-      <strong>This page does not exist</strong>
-      <span><code>${path.replace(/[<>&]/g, "")}</code> is not a route. Try the match centre, or search with ⌘K.</span>
-      <a class="btn" href="/" data-link style="margin-top:10px">Back to overview</a>
-    </div></div>`,
+    html: `<div class="view">
+      <div class="pagehead">
+        <p class="label">Error 404</p>
+        <h1 class="display display--tight" style="margin-top:14px">Nothing here.</h1>
+      </div>
+      <div class="empty">
+        <span><code>${path.replace(/[<>&]/g, "")}</code> is not a page on this site.</span>
+        <span>Try the fixture board, or search every club and competition with ⌘K.</span>
+        <a class="btn" href="/matches" data-link>Fixture board</a>
+      </div>
+    </div>`,
     title: "Not found — Footyline",
     crumb: "Not found",
     nav: "overview",

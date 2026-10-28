@@ -3,9 +3,23 @@
 An open-data football forecasting studio. Match probabilities for **11 competitions** and **2,782 fixtures**,
 built from five seasons of results, explained market by market, and audited in public against the closing odds.
 
-It is a from-scratch rebuild of the idea behind `formline-seven.vercel.app` — same territory (editorial football
-forecasts, dark forest palette), but a far deeper product: a real fitted model, a full match-detail surface, league
-and club pages, a Monte-Carlo season projection, a searchable command palette, and a backtest that anyone can read.
+The interface is a deliberate departure from the dashboard genre: **a match-day programme set by a Swiss
+typographer**. Warm paper instead of dark glass, near-black ink, a single vermilion signal colour, hairline rules
+instead of cards, and dense tabular rows instead of tiles.
+
+---
+
+## Design direction
+
+| Decision | Why |
+| --- | --- |
+| Warm paper (`#f1efe8`) + ink (`#14140f`) + one signal (`#ff3c00`) | Print economics: two inks and a spot colour. Instantly distinct from the dark-green/neon language every sports product uses. |
+| Archivo (variable width) + IBM Plex Mono + Instrument Serif | Grotesque for structure, mono for every number, serif italic used once per page as an editorial accent. |
+| Rules, not cards | Sections are separated by hairlines and numbered (`01`, `02`). Nothing floats, nothing has a shadow, so density reads as confidence rather than clutter. |
+| Fixtures as rows | 2,782 matches cannot live in cards. A row carries kick-off, competition, both clubs, three probabilities, a proportional bar, reliability, and a save button — scannable at roughly 60 fixtures per screen. |
+| A top masthead, not a sidebar | Navigation sits in a single 64px band with a competitions panel beneath it, so the content column gets the full width on desktop. |
+| Two modes | Light is the primary "programme"; dark is the "night edition". Both are first-class and keep the same three-ink logic. |
+| Motion only for state | A 300ms rise on route change, 140ms hover transitions, nothing decorative. |
 
 ---
 
@@ -13,15 +27,15 @@ and club pages, a Monte-Carlo season projection, a searchable command palette, a
 
 | Route | What it does |
 | --- | --- |
-| `/` | Hero, next fixtures, weekly signals, competition cards, model health |
-| `/matches` | Every remaining fixture, grouped by day; date range, competition, search, sort, cards/table |
-| `/match/:id` | Full forecast: 1X2, 11×11 scoreline grid, ~24 modelled markets, team comparison, H2H, goal distribution |
-| `/league/:id` | Live table with xG, Monte-Carlo projected finish, title race, upcoming fixtures |
-| `/team/:id` | Attack/defence/Elo profile, season projection, recent results, next fixtures |
-| `/model` | Method, formula, reliability diagram, weekly Brier trend, per-league backtest, forecast log, limits |
+| `/` | Hero with the live fixture count, next-fixture module, next three matchdays, competition index, public record |
+| `/matches` | Every remaining fixture as a row, grouped by day; date range, competition, search, sort |
+| `/match/:id` | Full forecast: three headline probabilities, 11×11 scoreline grid, ~24 modelled markets, team comparison, H2H, goal distribution |
+| `/league/:id` | Live table with xG and promotion/relegation zones, Monte-Carlo projected finish, title race, upcoming fixtures |
+| `/team/:id` | Attack/defence/Elo profile, season projection, recent results, season totals, upcoming rows |
+| `/model` | Method, formula, reliability diagram, rolling Brier trend, per-league backtest, forecast log, limits |
 | `/watchlist` | Saved fixtures and clubs (localStorage) |
 
-Plus: `⌘K` / `Ctrl+K` command palette, `g` `o|m|t|w` shortcuts, dark and light themes, deep-linkable filters,
+Plus: `⌘K` / `Ctrl+K` command palette, `g` `o|m|t|w` shortcuts, a competitions panel, deep-linkable filters,
 keyboard-accessible menus, and a skip link. Add `?theme=light` or `?theme=dark` to any URL to pin the theme.
 
 Screenshots of each surface live in `preview/`.

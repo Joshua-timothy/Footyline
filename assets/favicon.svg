@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Footyline">
-  <rect width="64" height="64" rx="16" fill="#0b1a12"/>
-  <path d="M16 46V18h20" fill="none" stroke="#d9f86d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M16 31h15" fill="none" stroke="#d9f86d" stroke-width="5" stroke-linecap="round"/>
-  <circle cx="45" cy="42" r="6.5" fill="none" stroke="#6ee7b7" stroke-width="2.4"/>
-  <path d="M45 35.5v3M45 45.5v3M38.5 42h3M48.5 42h3" stroke="#6ee7b7" stroke-width="1.6" stroke-linecap="round"/>
+  <rect width="64" height="64" fill="#f1efe8"/>
+  <rect x="6" y="6" width="52" height="52" fill="none" stroke="#14140f" stroke-width="2"/>
+  <path d="M23 45V19h19" fill="none" stroke="#14140f" stroke-width="5" stroke-linecap="square"/>
+  <path d="M23 32h13" fill="none" stroke="#14140f" stroke-width="5" stroke-linecap="square"/>
+  <rect x="40" y="38" width="9" height="9" fill="#ff3c00"/>
 </svg>

@@ -1,25 +1,25 @@
-import { esc, dayKey, fmtKickoff, plural } from "../util.js";
+import { esc, dayKey, plural } from "../util.js";
 import { state, team as getTeam } from "../store.js";
-import { fixtureCard, teamBadge, leagueTag, emptyState } from "../ui.js";
+import { matchRow, emptyState, dayLabel } from "../ui.js";
 
-const PAGE = 24;
+const PAGE = 26;
 const DAY = 86_400_000;
 
 const RANGES = [
   { id: "today", label: "Today" },
   { id: "weekend", label: "Weekend" },
   { id: "week", label: "7 days" },
-  { id: "all", label: "All season" },
+  { id: "all", label: "Season" },
 ];
 
 const SORTS = [
   { id: "kickoff", label: "Kick-off" },
   { id: "certain", label: "Most certain" },
-  { id: "close", label: "Closest call" },
+  { id: "close", label: "Closest" },
   { id: "goals", label: "Most goals" },
 ];
 
-const options = { range: "week", league: "ALL", sort: "kickoff", query: "", view: "cards", limit: PAGE };
+const options = { range: "week", league: "ALL", sort: "kickoff", query: "", limit: PAGE };
 
 const withinRange = (fixture, range) => {
   const kickoff = new Date(fixture.date);
@@ -58,40 +58,9 @@ function filtered() {
   return rows;
 }
 
-const pickName = (fixture) => {
-  const [home, draw, away] = fixture.p;
-  const best = Math.max(home, draw, away);
-  if (best === home) return `${getTeam(fixture.home).short} win`;
-  if (best === away) return `${getTeam(fixture.away).short} win`;
-  return "Draw";
-};
-
-function tableRow(fixture) {
-  const home = getTeam(fixture.home);
-  const away = getTeam(fixture.away);
-  const time = fmtKickoff(fixture.date).time;
-  const [h, d, a] = fixture.p.map((p) => p * 100);
-  const top = Math.max(h, d, a);
-  return `<tr>
-    <td class="mono dim">${time}</td>
-    <td class="left">${leagueTag(state.leaguesByCode.get(fixture.league).id)}</td>
-    <td class="left"><a class="team-cell" href="/match/${esc(fixture.id)}" data-link>
-      ${teamBadge(home, "sm")}<span>${esc(home.name)}</span>
-      <i style="color:var(--faint);font-style:normal;padding:0 4px">v</i>
-      ${teamBadge(away, "sm")}<span>${esc(away.name)}</span>
-    </a></td>
-    <td class="${h === top ? "strong" : ""}">${h.toFixed(0)}</td>
-    <td class="${d === top ? "strong" : ""}">${d.toFixed(0)}</td>
-    <td class="${a === top ? "strong" : ""}">${a.toFixed(0)}</td>
-    <td class="dim">${pickName(fixture)}</td>
-    <td class="dim">${(fixture.lh + fixture.la).toFixed(2)}</td>
-    <td class="dim">${Math.round(fixture.rel)}</td>
-  </tr>`;
-}
-
 function listMarkup(rows) {
   if (!rows.length) {
-    return emptyState("No fixtures match this view", "Try a wider date range, another competition, or clear the search.");
+    return emptyState("No fixtures in this view", "Widen the date range, choose another competition, or clear the search.");
   }
   const visible = rows.slice(0, options.limit);
   const groups = new Map();
@@ -102,31 +71,22 @@ function listMarkup(rows) {
   }
 
   const blocks = [...groups.entries()]
-    .map(([key, fixtures]) => {
-      const heading = new Intl.DateTimeFormat(undefined, { weekday: "long", day: "numeric", month: "long" }).format(
-        new Date(`${key}T12:00:00`),
-      );
-      const body =
-        options.view === "table"
-          ? `<div class="table-wrap card"><table class="table">
-              <thead><tr><th>Time</th><th class="left">Comp</th><th class="left">Fixture</th>
-              <th>1</th><th>X</th><th>2</th><th class="left">Pick</th><th>Goals</th><th>Rel</th></tr></thead>
-              <tbody>${fixtures.map(tableRow).join("")}</tbody></table></div>`
-          : `<div class="fixture-grid">${fixtures.map((fixture) => fixtureCard(fixture)).join("")}</div>`;
-      return `<section class="daygroup" aria-label="${esc(heading)}">
-        <header class="daygroup__head"><h2>${esc(heading)}</h2><span>${plural(fixtures.length, "fixture")}</span></header>
-        ${body}
-      </section>`;
-    })
+    .map(
+      ([key, fixtures]) => `<div class="match-row__day">${esc(dayLabel(key))}<span>${plural(
+        fixtures.length,
+        "fixture",
+      )}</span></div>${fixtures.map((fixture) => matchRow(fixture)).join("")}`,
+    )
     .join("");
 
   const more =
     rows.length > options.limit
-      ? `<div class="loadmore"><button class="btn btn--ghost" type="button" data-more>
+      ? `<div style="padding-top:22px"><button class="btn btn--ghost" type="button" data-more>
           Show ${Math.min(PAGE, rows.length - options.limit)} more
-        </button><span>${rows.length - options.limit} still to come</span></div>`
+        </button></div>`
       : "";
-  return blocks + more;
+
+  return `<div class="matchlist">${blocks}</div>${more}`;
 }
 
 const toolbar = () => `<div class="toolbar">
@@ -143,16 +103,13 @@ const toolbar = () => `<div class="toolbar">
         .map((league) => `<option value="${esc(league.id)}">${esc(league.name)}</option>`)
         .join("")}
     </select>
-    <label class="sr-only" for="fixtureSearch">Search fixtures</label>
-    <input class="input" id="fixtureSearch" type="search" placeholder="Team…" autocomplete="off">
+    <label class="sr-only" for="fixtureSearch">Search</label>
+    <input class="input" id="fixtureSearch" type="search" placeholder="Club…" autocomplete="off" style="width:150px">
     <label class="sr-only" for="sortFilter">Sort</label>
     <select class="select" id="sortFilter">
       ${SORTS.map((sort) => `<option value="${sort.id}">${sort.label}</option>`).join("")}
     </select>
-    <div class="segmented toolbar__spacer" role="group" aria-label="Layout">
-      <button type="button" data-view="cards" aria-pressed="${options.view === "cards"}">Cards</button>
-      <button type="button" data-view="table" aria-pressed="${options.view === "table"}">Table</button>
-    </div>
+    <span class="toolbar__count" id="resultCount"></span>
   </div>`;
 
 export default function matches({ path }) {
@@ -164,24 +121,24 @@ export default function matches({ path }) {
   options.limit = PAGE;
 
   const rows = filtered();
-  const leagueName = options.league === "ALL" ? null : state.leagues.get(options.league)?.name;
+  const league = options.league === "ALL" ? null : state.leagues.get(options.league);
 
   return {
     html: `<div class="view">
       <div class="pagehead">
-        <div class="pagehead__id">
+        <div class="pagehead__row">
           <div>
-            <p class="eyebrow">Match centre</p>
-            <h1>${leagueName ? esc(leagueName) : "Every fixture"}</h1>
-            <small>Probabilities for the rest of the 2026–27 season, modelled fixture by fixture.</small>
+            <p class="label">Match centre</p>
+            <h1 style="margin-top:10px">${league ? esc(league.name) : "Fixtures"}</h1>
           </div>
+          <p class="label" style="padding-bottom:6px">${state.leagues.size} competitions</p>
         </div>
       </div>
-      <div id="matchesControls">${toolbar()}<p class="result-count" id="resultCount"></p></div>
+      <div id="matchesControls">${toolbar()}</div>
       <div id="matchesList">${listMarkup(rows)}</div>
     </div>`,
-    title: "Match centre — Footyline",
-    crumb: "Match centre",
+    title: "Fixtures — Footyline",
+    crumb: "Fixtures",
     nav: "matches",
     mount(root) {
       const controlsEl = root.querySelector("#matchesControls");
@@ -211,9 +168,6 @@ export default function matches({ path }) {
         controlsEl.querySelectorAll("[data-range]").forEach((button) => {
           button.setAttribute("aria-pressed", String(button.dataset.range === options.range));
         });
-        controlsEl.querySelectorAll("[data-view]").forEach((button) => {
-          button.setAttribute("aria-pressed", String(button.dataset.view === options.view));
-        });
         syncUrl();
       };
 
@@ -224,18 +178,10 @@ export default function matches({ path }) {
 
       controlsEl.addEventListener("click", (event) => {
         const range = event.target.closest("[data-range]");
-        if (range) {
-          options.range = range.dataset.range;
-          reset();
-          return;
-        }
-        const view = event.target.closest("[data-view]");
-        if (view) {
-          options.view = view.dataset.view;
-          paint();
-        }
+        if (!range) return;
+        options.range = range.dataset.range;
+        reset();
       });
-
       leagueSelect.addEventListener("change", () => {
         options.league = leagueSelect.value;
         reset();

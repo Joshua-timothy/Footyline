@@ -1,12 +1,13 @@
-/* Bootstrap: theme, data, chrome, command palette, shortcuts. */
+/* Bootstrap: theme, chrome, competitions panel, command palette, shortcuts. */
 
 import { loadData, state, toggleWatch, watchCount, searchAll, team as getTeam } from "./store.js";
 import { startRouter, navigate, render } from "./router.js";
-import { esc, pctOf, relativeDay, fmtKickoff, dayKey } from "./util.js";
-import { teamBadge, leagueTag, leagueTint } from "./ui.js";
+import { esc, relativeDay, fmtKickoff } from "./util.js";
+import { teamBadge, leagueTint } from "./ui.js";
 
 /* ---------- theme -------------------------------------------------------- */
 const THEME_KEY = "footyline:theme";
+const THEME_COLOUR = { light: "#f1efe8", dark: "#12120e" };
 
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
@@ -16,16 +17,15 @@ function applyTheme(theme) {
     toggle.innerHTML = `<svg><use href="#i-${dark ? "sun" : "moon"}"/></svg>`;
     toggle.title = dark ? "Switch to light" : "Switch to dark";
     toggle.setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
-    toggle.setAttribute("aria-pressed", String(dark));
   }
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute("content", theme === "dark" ? "#07100b" : "#f5f6ef");
+  if (meta) meta.setAttribute("content", THEME_COLOUR[theme] || THEME_COLOUR.light);
 }
 
 function initTheme() {
   const requested = new URLSearchParams(location.search).get("theme");
   const saved = localStorage.getItem(THEME_KEY);
-  const system = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  const system = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   const initial = requested === "light" || requested === "dark" ? requested : saved || system;
   if (requested === "light" || requested === "dark") localStorage.setItem(THEME_KEY, requested);
   applyTheme(initial);
@@ -33,9 +33,6 @@ function initTheme() {
     const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
     localStorage.setItem(THEME_KEY, next);
     applyTheme(next);
-  });
-  window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", (event) => {
-    if (!localStorage.getItem(THEME_KEY)) applyTheme(event.matches ? "light" : "dark");
   });
 }
 
@@ -47,53 +44,68 @@ function renderLeagueNav() {
     .map((league) => {
       const count = (state.fixturesByLeague.get(league.id) || []).length;
       const active = location.pathname === `/league/${league.id}` ? 'aria-current="page"' : "";
-      return `<a class="nav-item" href="/league/${esc(league.id)}" data-link ${active}>
-        <i class="league-flag" style="--flag:${leagueTint(league.code)}"></i>
-        <span>${esc(league.name)}</span><b>${count}</b>
+      return `<a class="comp-item" href="/league/${esc(league.id)}" data-link ${active}>
+        <i class="swatch" style="--tone:${leagueTint(league.code)}"></i>
+        <span class="comp-item__name">${esc(league.name)}</span>
+        <b>${count}</b>
       </a>`;
     })
     .join("");
 }
 
 function updateStatus() {
-  const summary = state.metrics?.summary;
   const generated = state.feed?.generatedAt ? new Date(state.feed.generatedAt) : null;
-  const statusText = document.querySelector("#statusText");
-  const statusDot = document.querySelector("#statusDot");
-  if (statusText && generated) {
-    const health = state.metrics?.summary?.matches ? "All systems live" : "Feed loaded";
-    statusText.textContent = health;
-    statusDot.classList.remove("dot--warn");
-  }
-  const railMeta = document.querySelector("#railMeta");
-  if (railMeta) {
-    railMeta.innerHTML = `${state.fixtures.length.toLocaleString()} fixtures · ${
-      summary ? summary.matches.toLocaleString() : "—"
-    } backtested<br><a href="/model" data-link>Audit the model</a>`;
-  }
   const asOf = document.querySelector("#asOf");
   if (asOf && generated) {
-    const stamp = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+    const stamp = new Intl.DateTimeFormat(undefined, {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
     asOf.textContent = `Updated ${stamp.format(generated)}`;
     asOf.title = `Forecasts generated ${generated.toISOString()}`;
   }
-  const watchBadge = document.querySelector("[data-watch-count]");
-  if (watchBadge) {
-    const count = watchCount();
-    watchBadge.textContent = count ? String(count) : "";
-  }
+}
+
+/* competitions panel */
+function initCompetitions() {
+  const panel = document.querySelector("#competitionsPanel");
+  const toggle = document.querySelector("#competitionsToggle");
+  if (!panel || !toggle) return;
+
+  const setOpen = (open) => {
+    panel.classList.toggle("is-open", open);
+    toggle.setAttribute("aria-expanded", String(open));
+  };
+
+  toggle.addEventListener("click", (event) => {
+    event.stopPropagation();
+    setOpen(!panel.classList.contains("is-open"));
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!panel.classList.contains("is-open")) return;
+    if (panel.contains(event.target) || toggle.contains(event.target)) return;
+    if (event.target.closest("a[data-link]")) setOpen(false);
+    else setOpen(false);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && panel.classList.contains("is-open")) setOpen(false);
+  });
+
+  document.addEventListener("click", (event) => {
+    if (event.target.closest("a[data-link]")) setOpen(false);
+  });
 }
 
 /* ---------- watchlist ---------------------------------------------------- */
 function syncWatchButton(button, active) {
   button.setAttribute("aria-pressed", String(active));
-  button.setAttribute("aria-label", `${active ? "Remove from" : "Add to"} watchlist`);
-  button.title = active ? "Saved" : "Save fixture";
+  button.setAttribute("aria-label", `${active ? "Remove from" : "Add to"} saved`);
   const svg = button.querySelector("svg");
-  if (svg) {
-    svg.setAttribute("fill", active ? "currentColor" : "none");
-    svg.style.color = active ? "var(--accent)" : "currentColor";
-  }
+  if (svg) svg.setAttribute("fill", active ? "currentColor" : "none");
 }
 
 function initWatch() {
@@ -105,7 +117,6 @@ function initWatch() {
     const id = button.dataset.watch;
     const active = toggleWatch(id);
     document.querySelectorAll(`[data-watch="${CSS.escape(id)}"]`).forEach((element) => syncWatchButton(element, active));
-    updateStatus();
     if (location.pathname === "/watchlist") render({ scrollTop: false });
   });
 }
@@ -143,12 +154,11 @@ function initPalette() {
     if (active) active.scrollIntoView({ block: "nearest" });
   };
 
-  const item = (entry) => `<button class="palette__item" type="button" role="option" aria-selected="false"
-      data-href="${esc(entry.href)}">
-      ${entry.team ? teamBadge(entry.team, "sm") : ""}
-      <span>${esc(entry.label)}</span>
-      <small>${esc(entry.sub || "")}</small>
-    </button>`;
+  const item = (entry) => `<button class="palette__item" type="button" role="option" aria-selected="false" data-href="${esc(
+    entry.href,
+  )}">${entry.team ? teamBadge(entry.team, "sm") : ""}<span>${esc(entry.label)}</span><small>${esc(
+    entry.sub || "",
+  )}</small></button>`;
 
   const draw = (query) => {
     const results = searchAll(query);
@@ -158,9 +168,7 @@ function initPalette() {
     if (results.leagues.length) {
       blocks.push(`<p class="palette__group">Competitions</p>`);
       for (const league of results.leagues) {
-        blocks.push(
-          item({ href: `/league/${league.id}`, label: league.name, sub: league.country, team: null }),
-        );
+        blocks.push(item({ href: `/league/${league.id}`, label: league.name, sub: league.country }));
         items.push({ href: `/league/${league.id}` });
       }
     }
@@ -188,7 +196,6 @@ function initPalette() {
             href: `/match/${fixture.id}`,
             label: `${home.name} v ${away.name}`,
             sub: `${relativeDay(fixture.date)} · ${fmtKickoff(fixture.date).time}`,
-            team: null,
           }),
         );
         items.push({ href: `/match/${fixture.id}` });
@@ -197,7 +204,7 @@ function initPalette() {
 
     list.innerHTML = blocks.length
       ? blocks.join("")
-      : `<p class="palette__empty">No teams, fixtures or competitions match “${esc(query)}”.</p>`;
+      : `<p class="palette__empty">Nothing matches “${esc(query)}”.</p>`;
     selected = 0;
     select(0);
   };
@@ -235,6 +242,7 @@ function initPalette() {
   });
 
   document.querySelector("#searchOpen").addEventListener("click", open);
+
   document.addEventListener("keydown", (event) => {
     const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || "");
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
@@ -250,14 +258,13 @@ function initPalette() {
     }
     if (event.key === "Escape" && !palette.hidden) close();
     if (event.key === "g" && !typing) {
-      const once = (next) => {
+      const handler = (next) => {
         document.removeEventListener("keydown", handler);
         if (next.key === "o") navigate("/");
         if (next.key === "m") navigate("/matches");
         if (next.key === "t") navigate("/model");
         if (next.key === "w") navigate("/watchlist");
       };
-      const handler = (next) => once(next);
       document.addEventListener("keydown", handler, { once: true });
     }
   });
@@ -265,13 +272,11 @@ function initPalette() {
 
 /* ---------- boot --------------------------------------------------------- */
 const skeleton = `<div class="view" style="padding-top:28px">
-  <div class="skeleton" style="height:52px;width:min(420px,80%)"></div>
-  <div class="skeleton" style="height:20px;width:min(560px,90%);margin-top:16px"></div>
-  <div class="skeleton" style="height:150px;margin-top:26px"></div>
-  <div class="skeleton" style="height:320px;margin-top:14px"></div>
+  <div class="skeleton" style="height:14px;width:120px"></div>
+  <div class="skeleton" style="height:56px;width:min(460px,80%);margin-top:18px"></div>
+  <div class="skeleton" style="height:18px;width:min(520px,90%);margin-top:14px"></div>
+  <div class="skeleton" style="height:220px;margin-top:30px"></div>
 </div>`;
-
-
 
 async function boot() {
   initTheme();
@@ -280,21 +285,21 @@ async function boot() {
   try {
     await loadData();
   } catch (error) {
-    document.querySelector("#app").innerHTML = `<div class="view"><div class="notice" style="margin-top:30px">
-      <div><b>Forecasts could not load.</b> ${esc(error.message)}<br>
-      Run the data pipeline (<code>python pipeline/build.py</code>) or check that <code>data/feed.json</code> exists.</div>
-    </div></div>`;
-    const status = document.querySelector("#statusText");
-    if (status) status.textContent = "Feed unavailable";
-    document.querySelector("#statusDot")?.classList.add("dot--warn");
+    document.querySelector("#app").innerHTML = `<div class="view" style="padding-top:40px">
+      <div class="notice"><div><b>Forecasts could not load.</b> ${esc(error.message)}<br>
+      Run the pipeline or check that <code>data/feed.json</code> exists.</div></div></div>`;
     return;
   }
 
   renderLeagueNav();
   updateStatus();
+  initCompetitions();
   initWatch();
   initPalette();
   startRouter();
+
+  const watchBadge = document.querySelector("[data-watch-count]");
+  if (watchBadge) watchBadge.textContent = String(watchCount() || "");
 }
 
 boot();
