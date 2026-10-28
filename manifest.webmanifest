@@ -1,0 +1,31 @@
+{
+  "id": "/",
+  "name": "Footyline — every match, modelled",
+  "short_name": "Footyline",
+  "description": "Probabilities for every fixture across eleven competitions, graded in public.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f1efe8",
+  "theme_color": "#f1efe8",
+  "icons": [
+    {
+      "src": "/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
