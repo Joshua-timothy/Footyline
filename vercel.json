@@ -4,7 +4,12 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/((?!assets|data).*)", "destination": "/index.html" }
+    { "source": "/matches", "destination": "/index.html" },
+    { "source": "/model", "destination": "/index.html" },
+    { "source": "/watchlist", "destination": "/index.html" },
+    { "source": "/match/:id", "destination": "/index.html" },
+    { "source": "/league/:id", "destination": "/index.html" },
+    { "source": "/team/:id", "destination": "/index.html" }
   ],
   "headers": [
     {
