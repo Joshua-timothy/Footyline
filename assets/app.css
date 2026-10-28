@@ -850,3 +850,36 @@ img, svg { display: block; max-width: 100%; }
 .empty { justify-items: start; }
 .empty .btn { margin-top: 10px; justify-self: start; }
 .empty code { padding: 1px 5px; background: var(--paper-2); font-size: 12px; color: var(--ink); }
+
+/* --- tables on narrow screens --------------------------------------------- */
+/* Nothing inside a table may widen the page: the container scrolls if it must. */
+.tablescroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.tablescroll .table { min-width: 0; }
+
+@media (max-width: 719px) {
+  /* the per-league table drops Matches and Log loss (both .hide-sm) */
+  .table--league th, .table--league td { padding: 7px 4px; }
+  .table--league td:first-child { max-width: 0; width: 46%; }
+  .table--league .teamcell { min-width: 0; }
+  .table--league .teamcell span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* the forecast log keeps fixture, pick, probability, score and result */
+  .table--log { table-layout: fixed; width: 100%; font-size: 12px; }
+  .table--log th, .table--log td { padding: 7px 3px; }
+  .table--log th:nth-child(1), .table--log td:nth-child(1),
+  .table--log th:nth-child(2), .table--log td:nth-child(2) { display: none; }
+  .table--log th:nth-child(3), .table--log td:nth-child(3) { width: 50%; }
+  .table--log th:nth-child(4), .table--log td:nth-child(4) { width: 16%; }
+  .table--log th:nth-child(5), .table--log td:nth-child(5) { width: 13%; }
+  .table--log th:nth-child(6), .table--log td:nth-child(6) { width: 9%; }
+  .table--log th:nth-child(7), .table--log td:nth-child(7) { width: 12%; }
+  .table--log .badge { display: none; }
+  .table--log .teamcell { gap: 5px; min-width: 0; }
+  .table--log .teamcell span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}

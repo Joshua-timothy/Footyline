@@ -57,10 +57,10 @@ export default function modelView() {
         <td class="left"><a class="teamcell" href="/league/${esc(row.league.id)}" data-link><i class="swatch" style="--tone:var(--muted)"></i><span>${esc(
           row.league.name,
         )}</span></a></td>
-        <td>${row.matches}</td>
+        <td class="hide-sm">${row.matches}</td>
         <td class="strong">${row.brier.toFixed(3)}</td>
         <td class="dim">${row.marketBrier?.toFixed(3) ?? "—"}</td>
-        <td>${row.logLoss.toFixed(3)}</td>
+        <td class="hide-sm">${row.logLoss.toFixed(3)}</td>
         <td>${row.accuracy.toFixed(1)}%</td>
       </tr>`,
     )
@@ -160,18 +160,22 @@ export default function modelView() {
           </div>
         </div>
 
-        <table class="table" style="margin-top:34px">
-          <thead><tr><th class="left">Competition</th><th>Matches</th><th>Brier</th><th>Market</th><th>Log loss</th><th>Accuracy</th></tr></thead>
-          <tbody>${leagueRows}</tbody>
-        </table>
+        <div class="tablescroll" style="margin-top:34px">
+          <table class="table table--league">
+            <thead><tr><th class="left">Competition</th><th class="hide-sm">Matches</th><th>Brier</th><th>Market</th><th class="hide-sm">Log loss</th><th>Accuracy</th></tr></thead>
+            <tbody>${leagueRows}</tbody>
+          </table>
+        </div>
       </section>
 
       <section class="band">
         ${bandHead({ idx: "03", title: "Every call, kept honest" })}
-        <table class="table">
-          <thead><tr><th class="left">Date</th><th class="left">Comp</th><th class="left">Fixture</th><th>Pick</th><th>Prob.</th><th>Score</th><th class="left">Result</th></tr></thead>
-          <tbody>${logRows}</tbody>
-        </table>
+        <div class="tablescroll">
+          <table class="table table--log">
+            <thead><tr><th class="left">Date</th><th class="left">Comp</th><th class="left">Fixture</th><th>Pick</th><th>Prob.</th><th>Score</th><th class="left">Result</th></tr></thead>
+            <tbody>${logRows}</tbody>
+          </table>
+        </div>
         <p class="panel__note">The most recent ${Math.min(30, (metrics.log || []).length)} forecasts from the backtest,
         shown with the probability at the time it was made. Nothing is edited after the fact.</p>
       </section>
