@@ -27,9 +27,13 @@ LEAGUE_BY_ID = {league["id"]: league for league in LEAGUES}
 
 # Model configuration. Half-life and ridge were chosen by a walk-forward grid
 # search over the 2025-26 season across the top five leagues (see tune.py).
+# xg_weight blends expected goals into the goal observations:
+#   z = (1 - w) * goals + w * scale * xG
+# chosen by a walk-forward sweep on the live season (see tune_xg.py).
 MODEL = dict(
     half_life_days=420,      # time-decay half life for historical match weights
     l2=0.05,                 # ridge penalty on attack/defence ratings
+    xg_weight=0.40,          # blend of xG into the goal observation (0 = goals only)
     iterations=420,
     learning_rate=0.9,
     momentum=0.9,

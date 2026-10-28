@@ -91,6 +91,7 @@ class Builder:
         self.h2h: dict[str, dict] = {}
         self.team_id_by_fd: dict[tuple[str, str], str] = {}
         self.used_ids: set[str] = set()
+        self.xg_matches = 0
         self.model_version = self._version()
 
         print(
@@ -218,10 +219,17 @@ class Builder:
         code = league["code"]
         league_matches = [m for m in self.matches if m.league == code]
         live = [m for m in league_matches if m.season == self.live_season]
-        ratings = fit_ratings(league_matches, AS_OF, half_life=MODEL["half_life_days"], l2=MODEL["l2"])
+        ratings = fit_ratings(
+            league_matches,
+            AS_OF,
+            half_life=MODEL["half_life_days"],
+            l2=MODEL["l2"],
+            xg_weight=MODEL["xg_weight"],
+        )
         if ratings is None:
             print(f"  !! {code}: not enough data")
             return
+        self.xg_matches += ratings.xg_matches
         elo = elo_table(league_matches, AS_OF)
 
         played = [m for m in live if m.played_on < AS_OF]
@@ -510,9 +518,15 @@ class Builder:
                  "role": f"Full-season fixture calendar for {self.season_label}"},
             ],
             "model": {
-                "name": "Time-decayed Dixon-Coles",
+                "name": (
+                    "Time-decayed Dixon-Coles with xG blending"
+                    if MODEL["xg_weight"] > 0
+                    else "Time-decayed Dixon-Coles"
+                ),
                 "halfLifeDays": MODEL["half_life_days"],
                 "ridge": MODEL["l2"],
+                "xgWeight": MODEL["xg_weight"],
+                "xgMatches": self.xg_matches,
                 "scoreRange": 10,
                 "trainedMatches": len(self.matches),
             },
@@ -579,6 +593,7 @@ class Builder:
                 "ridge": MODEL["l2"],
                 "refitDays": 7,
                 "scoreRange": 10,
+                "xgWeight": MODEL["xg_weight"],
                 "backtestSeasons": backtest,
             },
         }

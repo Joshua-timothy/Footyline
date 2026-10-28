@@ -97,13 +97,19 @@ export default function modelView() {
             home advantage and a low-score correlation. Fitting maximises a weighted likelihood, so recent matches
             count more than old ones — half the weight is gone after about
             <strong>${state.feed?.model?.halfLifeDays ?? 420} days</strong>.</p>
-            <p><strong>2. Shrinkage, not confidence tricks.</strong> Ratings are ridge-regularised toward the league
+            <p><strong>2. Expected goals damp the scoreline.</strong> Where xG is published, the observed goals are
+            blended with it before fitting — <code>z = ${((1 - (state.feed?.model?.xgWeight ?? 0)) * 100).toFixed(0)}%
+            goals + ${((state.feed?.model?.xgWeight ?? 0) * 100).toFixed(0)}% xG</code>, rescaled to the goals
+            scale — so a 5-1 built on 1.1 xG counts for less than the scoreline suggests, and a 0-0 with 2.5 xG
+            counts for more. xG is only published from 2026-27, so earlier matches use goals alone; a missing value
+            simply leaves that row untouched.</p>
+            <p><strong>3. Shrinkage, not confidence tricks.</strong> Ratings are ridge-regularised toward the league
             average, and clubs without much evidence are pulled further toward a conservative promoted-side prior.
             Eight matches cannot rewrite five seasons.</p>
-            <p><strong>3. One grid, every market.</strong> The two expected-goal figures produce an 11×11 scoreline
+            <p><strong>4. One grid, every market.</strong> The two expected-goal figures produce an 11×11 scoreline
             grid. Match result, double chance, totals, both-teams-to-score, team goals and Asian handicaps are all read
             off that same grid, so the markets can never contradict one another.</p>
-            <p><strong>4. No odds in the forecast.</strong> The model never sees a price. Closing odds are used only as
+            <p><strong>5. No odds in the forecast.</strong> The model never sees a price. Closing odds are used only as
             an independent benchmark on this page, which is why the comparison is worth reading.</p>
           </div>
 
@@ -121,6 +127,7 @@ export default function modelView() {
               <dt>γ · home advantage</dt><dd>fitted per league</dd>
               <dt>τ · low-score fix</dt><dd>draws &amp; 1-0s</dd>
               <dt>Half-life</dt><dd>${state.feed?.model?.halfLifeDays ?? 420} days</dd>
+              ${state.feed?.model?.xgWeight ? `<dt>xG blend</dt><dd>${Math.round(state.feed.model.xgWeight * 100)}% · ${(state.feed.model.xgMatches ?? 0).toLocaleString()} matches</dd>` : ""}
               <dt>Ridge penalty</dt><dd>${state.feed?.model?.ridge?.toFixed(3) ?? "0.05"}</dd>
               <dt>Training matches</dt><dd>${(state.feed?.model?.trainedMatches ?? 0).toLocaleString()}</dd>
             </dl>

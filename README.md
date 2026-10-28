@@ -51,6 +51,11 @@ P(x, y) ∝ τ(x, y) · Poisson(x; λ_home) · Poisson(y; λ_away)
 ```
 
 * Five seasons of results (2021-22 → 2026-27) per league, weighted with a 420-day half-life.
+* **xG blending.** Where expected goals are published (2026-27 onward), the fitted observation becomes
+  `z = 0.6·goals + 0.4·xG·scale`, with `scale` the time-weighted goals-per-xG ratio (shrunk toward 1 and
+  clipped to ±8%). A 5-1 built on 1.1 xG therefore counts for less than the scoreline suggests. Matches
+  without xG keep `z = goals`, so pre-xG seasons are bit-for-bit unchanged and a missing feed degrades
+  silently to the goals-only model.
 * Ridge-regularised attack/defence ratings; thin evidence shrinks toward a conservative promoted-side prior.
 * League-specific home advantage and low-score correction (`ρ`), both fitted per league.
 * An independent Elo rating is computed for comparison and shown on club pages, but is *not* blended in.
@@ -109,6 +114,8 @@ pipeline/
   check.py                 post-build verification used by CI
   build.py                 assembles the feed; --mode daily | weekly
   tune.py                  walk-forward grid search for half-life and ridge
+  tune_xg.py               walk-forward sweep for the xG blend weight
+  xg_report.py             shows how xG damping moves ratings around odd scorelines
   cache/                   cached CSVs/JSON, plus .fetch-state and fetch-manifest
 .github/workflows/forecast.yml   scheduled refresh (daily ×2, weekly audit)
 pipeline/requirements.txt  numpy

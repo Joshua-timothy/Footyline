@@ -347,6 +347,8 @@ class Ratings:
     rho: float
     played: np.ndarray
     last_played: list[date | None]
+    xg_matches: int = 0
+    xg_scale: float = 1.0
     index: dict[str, int] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -372,6 +374,33 @@ def _tau(x: int, y: int, lam: float, mu: float, rho: float) -> float:
     return 1.0
 
 
+def _xg_scale(
+    x: np.ndarray,
+    y: np.ndarray,
+    xg_home: np.ndarray,
+    xg_away: np.ndarray,
+    weights: np.ndarray,
+    has_xg: np.ndarray,
+) -> float:
+    """Factor that puts expected goals on the goals scale.
+
+    xG is normally calibrated to goals, but a provider can drift by a few
+    percent. The ratio is estimated on the available sample with the same time
+    weights, shrunk toward 1 and clipped, so a thin or wild sample cannot bend
+    the fit.
+    """
+    count = int(has_xg.sum())
+    if count < 50:
+        return 1.0
+    w = weights[has_xg]
+    goals = float(np.dot(w, x[has_xg] + y[has_xg]))
+    xg = float(np.dot(w, xg_home[has_xg] + xg_away[has_xg]))
+    if xg <= 0 or goals <= 0:
+        return 1.0
+    ratio = 1.0 + 0.6 * (goals / xg - 1.0)
+    return float(np.clip(ratio, 0.92, 1.08))
+
+
 def fit_ratings(
     matches: list[Match],
     as_of: date,
@@ -379,6 +408,7 @@ def fit_ratings(
     half_life: float = MODEL["half_life_days"],
     l2: float = MODEL["l2"],
     iterations: int = MODEL["iterations"],
+    xg_weight: float = 0.0,
     promoted_prior: tuple[float, float] = (
         MODEL["promoted_attack_prior"],
         MODEL["promoted_defence_prior"],
@@ -400,6 +430,25 @@ def fit_ratings(
     weights = np.power(0.5, age / half_life)
     weights /= weights.mean()
 
+    # xG-blended observations. Each match contributes exactly one observation,
+    # so a season with xG and a season without sit in the same likelihood:
+    #   z = (1 - w) * goals + w * scale * xG   where xG exists
+    #   z = goals                              where it does not
+    # A missing xG feed therefore degrades to the goals-only model instead of
+    # needing a separate code path.
+    xg_home = np.array([m.xg[0] if m.xg else np.nan for m in history], dtype=float)
+    xg_away = np.array([m.xg[1] if m.xg else np.nan for m in history], dtype=float)
+    has_xg = np.isfinite(xg_home) & np.isfinite(xg_away)
+    xg_matches = int(has_xg.sum())
+    xg_scale = _xg_scale(x, y, xg_home, xg_away, weights, has_xg)
+
+    blend = float(np.clip(xg_weight, 0.0, 1.0)) if xg_matches else 0.0
+    z_home = x.copy()
+    z_away = y.copy()
+    if blend > 0.0:
+        z_home[has_xg] = (1.0 - blend) * x[has_xg] + blend * xg_scale * xg_home[has_xg]
+        z_away[has_xg] = (1.0 - blend) * y[has_xg] + blend * xg_scale * xg_away[has_xg]
+
     attack = np.zeros(n)
     defence = np.zeros(n)
     home_adv = 0.22
@@ -419,8 +468,8 @@ def fit_ratings(
     for step in range(1, iterations + 1):
         lam = np.exp(attack[phi] + defence[psi] + home_adv)
         mu = np.exp(attack[psi] + defence[phi])
-        res_home = weights * (x - lam)
-        res_away = weights * (y - mu)
+        res_home = weights * (z_home - lam)
+        res_away = weights * (z_away - mu)
 
         grad_att = np.zeros(n)
         grad_def = np.zeros(n)
@@ -481,6 +530,8 @@ def fit_ratings(
         rho=float(rho),
         played=played_before.astype(int),
         last_played=last_played,
+        xg_matches=xg_matches,
+        xg_scale=float(xg_scale),
     )
 
 
@@ -707,9 +758,12 @@ def walk_forward(
     start: date,
     end: date,
     refit_days: int = 7,
+    xg_weight: float | None = None,
 ) -> dict:
     """Fit on everything before each refit date, predict the following week."""
     from config import MODEL as CFG
+
+    blend = CFG["xg_weight"] if xg_weight is None else float(xg_weight)
 
     records: list[dict] = []
     per_league: dict[str, dict] = {}
@@ -723,7 +777,11 @@ def walk_forward(
         cursor = start
         while cursor <= end:
             ratings_cache[cursor] = fit_ratings(
-                league_matches, cursor, half_life=CFG["half_life_days"], l2=CFG["l2"]
+                league_matches,
+                cursor,
+                half_life=CFG["half_life_days"],
+                l2=CFG["l2"],
+                xg_weight=blend,
             )
             cursor += timedelta(days=refit_days)
         refit_dates = sorted(ratings_cache)
