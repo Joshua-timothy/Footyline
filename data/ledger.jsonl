@@ -1958,3 +1958,6 @@
 {"k":"f","f":"pl-20261127-nottingham-forest-chelsea","l":"E0","h":"Nott'm Forest","a":"Chelsea","d":"2026-11-27T20:00:00Z","p":[0.3596,0.2699,0.3706],"lh":1.353,"la":1.377,"v":"98aecd3e73","t":"2026-11-07T03:03:17Z"}
 {"k":"f","f":"cha-20261127-southampton-middlesbrough","l":"E1","h":"Southampton","a":"Middlesbrough","d":"2026-11-27T20:00:00Z","p":[0.4768,0.2355,0.2877],"lh":1.772,"la":1.332,"v":"98aecd3e73","t":"2026-11-07T03:03:17Z"}
 {"k":"f","f":"pri-20261127-cs-maritimo-cd-nacional","l":"P1","h":"Maritimo","a":"Nacional","d":"2026-11-27T20:15:00Z","p":[0.3748,0.2515,0.3736],"lh":1.245,"la":1.243,"v":"98aecd3e73","t":"2026-11-07T03:03:17Z"}
+{"k":"f","f":"cha-20261128-blackburn-rovers-charlton-athletic","l":"E1","h":"Blackburn","a":"Charlton","d":"2026-11-28T12:30:00Z","p":[0.4728,0.2914,0.2357],"lh":1.29,"la":0.822,"v":"98aecd3e73","t":"2026-11-07T12:54:02Z"}
+{"k":"f","f":"cha-20261128-lincoln-city-wolverhampton-wanderers","l":"E1","h":"Lincoln","a":"Wolves","d":"2026-11-28T12:30:00Z","p":[0.2727,0.2661,0.4612],"lh":1.06,"la":1.46,"v":"98aecd3e73","t":"2026-11-07T12:54:02Z"}
+{"k":"f","f":"cha-20261128-preston-north-end-norwich-city","l":"E1","h":"Preston","a":"Norwich","d":"2026-11-28T12:30:00Z","p":[0.3071,0.2501,0.4429],"lh":1.278,"la":1.581,"v":"98aecd3e73","t":"2026-11-07T12:54:02Z"}
